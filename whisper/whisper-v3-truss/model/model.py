@@ -26,7 +26,14 @@ class Model:
     def predict(self, request: Dict) -> Dict:
         with NamedTemporaryFile() as fp:
             fp.write(request["response"])
-            result = whisper.transcribe(self.model, fp.name, temperature=0)
+            result = whisper.transcribe(
+                self.model,
+                fp.name,
+                temperature=0,
+                compression_ratio_threshold=1.35,
+                beam_size=5,
+                logprob_threshold=2.8,
+            )
             segments = [
                 {"start": r["start"], "end": r["end"], "text": r["text"]}
                 for r in result["segments"]
