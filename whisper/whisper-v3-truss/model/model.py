@@ -32,7 +32,10 @@ class Model:
                 temperature=0,
                 compression_ratio_threshold=1.35,
                 beam_size=5,
+                best_of=5,
                 logprob_threshold=2.8,
+                # no_speech_threshold=0.4
+                word_timestamps=True,
             )
             segments = [
                 {"start": r["start"], "end": r["end"], "text": r["text"]}
