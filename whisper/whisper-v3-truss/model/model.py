@@ -6,6 +6,7 @@ import requests
 import torch
 
 import whisper
+import time
 
 
 class Model:
@@ -14,17 +15,45 @@ class Model:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
 
+    def download_file_with_retries(
+        self, url: str, max_retries: int = 3, wait_seconds: int = 2
+    ) -> bytes:
+        url = url.strip()
+        attempt = 0
+        while attempt < max_retries:
+            try:
+                print(
+                    f"Attempting to download file from >>{url}<<, attempt {attempt + 1}"
+                )
+
+                resp = requests.get(url)
+                resp.raise_for_status()  # Raise an exception for HTTP errors
+                print(
+                    f"File downloaded successfully from >>{url}<< on attempt {attempt + 1}"
+                )
+                return resp.content
+            except requests.exceptions.RequestException as e:
+                print(f"Error downloading file from {url}: {e}")
+                attempt += 1
+                if attempt < max_retries:
+                    print(f"Retrying in {wait_seconds} seconds...")
+                    time.sleep(wait_seconds)
+                else:
+                    print(
+                        f"Failed to download the file from {url} after {max_retries} attempts."
+                    )
+                    raise
+        return b""
+
     def preprocess(self, request: Dict) -> Dict:
-        print("Received URL: ", request["url"])
+        print(f"Received URL: >>{repr(request['url'])}<<")
 
         try:
-            resp = requests.get(request["url"])
-            resp.raise_for_status()
-            print(f"File downloaded successfully from {request['url']}")
+            content = self.download_file_with_retries(request["url"])
         except requests.exceptions.RequestException as e:
             print(f"Failed to download the file from {request['url']}: {e}")
             raise
-        return {"response": resp.content}
+        return {"response": content}
 
     def load(self):
         self.model = whisper.load_model(
