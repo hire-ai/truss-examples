@@ -16,7 +16,14 @@ class Model:
 
     def preprocess(self, request: Dict) -> Dict:
         print("Received URL: ", request["url"])
-        resp = requests.get(request["url"])
+
+        try:
+            resp = requests.get(request["url"])
+            resp.raise_for_status()
+            print(f"File downloaded successfully from {request['url']}")
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to download the file from {request['url']}: {e}")
+            raise
         return {"response": resp.content}
 
     def load(self):
@@ -25,8 +32,11 @@ class Model:
         )
 
     def predict(self, request: Dict) -> Dict:
+        print("Starting prediction...")
         with NamedTemporaryFile() as fp:
             fp.write(request["response"])
+            print("Temporary file created: ", fp.name)
+
             result = whisper.transcribe(
                 self.model,
                 fp.name,
@@ -38,6 +48,8 @@ class Model:
                 # no_speech_threshold=0.4
                 word_timestamps=True,
             )
+            print("Transcription completed successfully")
+
             segments = [
                 {"start": r["start"], "end": r["end"], "text": r["text"]}
                 for r in result["segments"]
