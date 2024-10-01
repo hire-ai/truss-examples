@@ -15,6 +15,7 @@ class Model:
         self.model = None
 
     def preprocess(self, request: Dict) -> Dict:
+        print("Received URL: ", request["url"])
         resp = requests.get(request["url"])
         return {"response": resp.content}
 
